@@ -53,16 +53,22 @@ fn backprop(a0: &Vector1x2, y: &Vector1x1, network: &Network) -> (Matrix2x2, Vec
     let dcdw1: Matrix2x2 = a0.transpose() * d1;
     let dcdb1: Vector1x2 = d1;
 
-    //gradient vectors and cost
+    //gradient vectors
     (dcdw1, dcdb1, dcdw2, dcdb2)
 }
 
 //trains the network using gradient descent 
-fn train(data: &Matrix4x3, network: &mut Network, learn_rate: f64) {
+fn train(data: &Matrix4x3, network: &mut Network, learn_rate_start: f64, epoch_lenght: u32) {
+    let mut learn_rate = learn_rate_start;
     let mut generation = 0;
+    let mut epoch_start = 0;
 
     loop {
         generation += 1;
+        if generation - epoch_start > epoch_lenght {
+            epoch_start = generation;
+            learn_rate /= 10.0;
+        }
 
         //initialize gradient vectors 
         let mut dcdw1: Matrix2x2 = Matrix2x2::zeros();
@@ -93,7 +99,7 @@ fn train(data: &Matrix4x3, network: &mut Network, learn_rate: f64) {
 
         //avarage cost over all training examples
         avarage_cost /= data.nrows() as f64;
-        println!("generation: {}, cost was {}", generation, avarage_cost);
+        println!("generation: {}, cost was {}, learn rate: {}", generation, avarage_cost, learn_rate);
         
         //update weights and biases using avarage gradient vector
         let num_of_examples = data.nrows() as f64;
@@ -128,5 +134,5 @@ fn main() {
 
     let mut ffnn: Network = init();
 
-    train(&training_data, &mut ffnn, 1.0);
+    train(&training_data, &mut ffnn, 1.0, 200_000);
 }
