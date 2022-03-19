@@ -17,6 +17,13 @@ struct Network {
     b2: Vector1x1,
 }
 
+struct Gradient {
+    dcdw1: Matrix2x2,
+    dcdb1: Vector1x2,
+    dcdw2: Vector2x1,
+    dcdb2: Vector1x1,
+}
+
 //initialize network with random weights and biases 
 fn init() -> Network {
     Network {
@@ -38,7 +45,7 @@ fn feedforward(a0: &Vector1x2, network: &Network) -> Vector1x1 {
 }
 
 //backpropagation algorithm 
-fn backprop(a0: &Vector1x2, y: &Vector1x1, network: &Network) -> (Matrix2x2, Vector1x2, Vector2x1, Vector1x1) {
+fn backprop(a0: &Vector1x2, y: &Vector1x1, network: &Network) -> Gradient {
     //forward propagation
     let z1: Vector1x2 = a0 * network.w1 + network.b1;
     let a1: Vector1x2 = z1.map(sigmoid);
@@ -54,7 +61,12 @@ fn backprop(a0: &Vector1x2, y: &Vector1x1, network: &Network) -> (Matrix2x2, Vec
     let dcdb1: Vector1x2 = d1;
 
     //gradient vectors
-    (dcdw1, dcdb1, dcdw2, dcdb2)
+    Gradient {
+        dcdw1: dcdw1,
+        dcdb1: dcdb1,
+        dcdw2: dcdw2,
+        dcdb2: dcdb2,
+    }
 }
 
 //trains the network using gradient descent 
@@ -83,13 +95,13 @@ fn train(data: &Matrix4x3, network: &mut Network, learn_rate_start: f64, epoch_l
             let a0: Vector1x2 = data.fixed_slice::<1, 2>(i, 0).into();
             let y: Vector1x1 = data.fixed_slice::<1, 1>(i, 2).into();
             
-            let gradient: (Matrix2x2, Vector1x2, Vector2x1, Vector1x1) = backprop(&a0, &y, network);
+            let gradient: Gradient = backprop(&a0, &y, network);
 
             //add derivatives of current training example to the avarage gradient
-            dcdw1 += gradient.0;
-            dcdb1 += gradient.1;
-            dcdw2 += gradient.2;
-            dcdb2 += gradient.3;
+            dcdw1 += gradient.dcdw1;
+            dcdb1 += gradient.dcdb1;
+            dcdw2 += gradient.dcdw2;
+            dcdb2 += gradient.dcdb2;
 
             //compute cost for current training example 
             let a2 = feedforward(&a0, &network);
